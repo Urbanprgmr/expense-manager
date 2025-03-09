@@ -1,190 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense & Budget Tracker</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            background: #fff;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-        }
-        h2 {
-            text-align: center;
-            color: #333;
-        }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        button {
-            background: #28a745;
-            color: white;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #218838;
-        }
-        .budget-section {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-left: 5px solid #007bff;
-            border-radius: 5px;
-        }
-        .budget-title {
-            font-weight: bold;
-            color: #007bff;
-        }
-        .expense-list {
-            list-style: none;
-            padding: 0;
-        }
-        .expense-list li {
-            background: #e9ecef;
-            margin: 5px 0;
-            padding: 8px;
-            border-radius: 5px;
-        }
-        .chart-container {
-            margin-top: 20px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeonTrack - Expense Tracker</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div class="container">
+    <h1>NeonTrack</h1>
 
-<div class="container">
-    <h2>Expense & Budget Tracker</h2>
+    <!-- Summary Section -->
+    <section class="card summary">
+      <h2>Summary</h2>
+      <div class="summary-grid">
+        <p>Total Income: <span id="total-income">0 MVR</span></p>
+        <p>Total Budgeted Expenses: <span id="total-budgeted-expenses">0 MVR</span></p>
+        <p>Total Uncategorized Expenses: <span id="total-uncategorized-expenses">0 MVR</span></p>
+        <p>Remaining Balance: <span id="remaining-balance">0 MVR</span></p>
+      </div>
+    </section>
 
-    <label>Enter Income (MVR):</label>
-    <input type="number" id="incomeInput" placeholder="Enter your income">
-    <label>Enter Utility Expenses (MVR):</label>
-    <input type="number" id="utilityInput" placeholder="Enter utility expenses">
-    <button onclick="setIncome()">Set Income</button>
+    <!-- Budget Categories Section -->
+    <section class="card budget-categories">
+      <h2>Budget Categories</h2>
+      <form id="budget-form">
+        <input type="text" id="budget-category" placeholder="Category" required>
+        <input type="number" id="budget-amount" placeholder="Amount in MVR" required>
+        <button type="submit">Set Budget</button>
+      </form>
+      <div id="budget-list" class="budget-grid"></div>
+    </section>
 
-    <h3>Set Budget Percentages</h3>
-    <label>Saving Percentage (%):</label>
-    <input type="number" id="savingPercent" placeholder="e.g. 30">
-    <label>Life Expenses Percentage (%):</label>
-    <input type="number" id="lifePercent" placeholder="e.g. 40">
-    <label>Coffee Budget Percentage (%):</label>
-    <input type="number" id="coffeePercent" placeholder="e.g. 10">
-    <label>Extra Activities Percentage (%):</label>
-    <input type="number" id="extraPercent" placeholder="e.g. 20">
-    <button onclick="setBudgets()">Set Budgets</button>
+    <!-- Income Section -->
+    <section class="card income">
+      <h2>Add Income</h2>
+      <form id="income-form">
+        <input type="text" id="income-description" placeholder="Description" required>
+        <input type="number" id="income-amount" placeholder="Amount in MVR" required>
+        <button type="submit">Add Income</button>
+      </form>
+    </section>
 
-    <div id="budgets"></div>
+    <!-- Expenses Section -->
+    <section class="card expense">
+      <h2>Add Expense</h2>
+      <form id="expense-form">
+        <input type="text" id="expense-description" placeholder="Description" required>
+        <input type="number" id="expense-amount" placeholder="Amount in MVR" required>
+        <select id="expense-category">
+          <option value="uncategorized">Uncategorized</option>
+        </select>
+        <button type="submit">Add Expense</button>
+      </form>
+    </section>
 
-    <div class="chart-container">
-        <canvas id="budgetChart"></canvas>
+    <!-- History Section -->
+    <section class="card history">
+      <h2>History</h2>
+      <table id="history-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Timestamp</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Rows will be added dynamically -->
+        </tbody>
+      </table>
+    </section>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="edit-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Edit Entry</h2>
+      <form id="edit-form">
+        <input type="text" id="edit-description" placeholder="Description" required>
+        <input type="number" id="edit-amount" placeholder="Amount in MVR" required>
+        <select id="edit-category">
+          <option value="uncategorized">Uncategorized</option>
+        </select>
+        <button type="submit">Save Changes</button>
+      </form>
     </div>
-</div>
+  </div>
 
-<script>
-    let totalIncome = 0, remainingIncome = 0, utilityExpenses = 0;
-    let budgets = {
-        saving: { percentage: 0, amount: 0, spent: 0 },
-        life: { percentage: 0, amount: 0, spent: 0 },
-        coffee: { percentage: 0, amount: 0, spent: 0 },
-        extra: { percentage: 0, amount: 0, spent: 0 }
-    };
-    let budgetChart;
-
-    function setIncome() {
-        totalIncome = parseFloat(document.getElementById("incomeInput").value) || 0;
-        utilityExpenses = parseFloat(document.getElementById("utilityInput").value) || 0;
-        remainingIncome = totalIncome - utilityExpenses;
-        alert("Income and Utility Expenses Set!");
-    }
-
-    function setBudgets() {
-        let savingPercent = parseFloat(document.getElementById("savingPercent").value) || 0;
-        let lifePercent = parseFloat(document.getElementById("lifePercent").value) || 0;
-        let coffeePercent = parseFloat(document.getElementById("coffeePercent").value) || 0;
-        let extraPercent = parseFloat(document.getElementById("extraPercent").value) || 0;
-
-        let totalPercentage = savingPercent + lifePercent + coffeePercent + extraPercent;
-        if (totalPercentage !== 100) {
-            alert("Percentages must add up to 100!");
-            return;
-        }
-
-        budgets.saving.percentage = savingPercent;
-        budgets.life.percentage = lifePercent;
-        budgets.coffee.percentage = coffeePercent;
-        budgets.extra.percentage = extraPercent;
-
-        updateBudgets();
-    }
-
-    function updateBudgets() {
-        let budgetDiv = document.getElementById("budgets");
-        budgetDiv.innerHTML = "";
-
-        for (let key in budgets) {
-            budgets[key].amount = (remainingIncome * budgets[key].percentage) / 100;
-            let remaining = budgets[key].amount - budgets[key].spent;
-            
-            budgetDiv.innerHTML += `
-                <div class="budget-section">
-                    <div class="budget-title">${key.toUpperCase()} Budget</div>
-                    Allocated: <strong>${budgets[key].amount.toFixed(2)} MVR</strong><br>
-                    Remaining: <strong>${remaining.toFixed(2)} MVR</strong><br>
-                    <label>Expense:</label>
-                    <input type="number" id="expense-${key}" placeholder="Enter expense">
-                    <button onclick="addExpense('${key}')">Add Expense</button>
-                    <ul class="expense-list" id="list-${key}"></ul>
-                </div>`;
-        }
-
-        updateChart();
-    }
-
-    function addExpense(budgetType) {
-        let expense = parseFloat(document.getElementById(`expense-${budgetType}`).value) || 0;
-        if (expense > budgets[budgetType].amount - budgets[budgetType].spent) {
-            alert("Not enough balance in this budget!");
-            return;
-        }
-
-        budgets[budgetType].spent += expense;
-        document.getElementById(`list-${budgetType}`).innerHTML += `<li>${expense} MVR</li>`;
-        updateBudgets();
-    }
-
-    function updateChart() {
-        let labels = Object.keys(budgets).map(b => b.toUpperCase());
-        let data = Object.values(budgets).map(b => b.amount);
-        let remaining = Object.values(budgets).map(b => b.amount - b.spent);
-
-        if (budgetChart) budgetChart.destroy();
-        let ctx = document.getElementById("budgetChart").getContext("2d");
-        budgetChart = new Chart(ctx, {
-            type: "bar",
-            data: {
-                labels: labels,
-                datasets: [
-                    { label: "Allocated Budget", data: data, backgroundColor: "blue" },
-                    { label: "Remaining Balance", data: remaining, backgroundColor: "green" }
-                ]
-            }
-        });
-    }
-</script>
-
+  <script src="app.js"></script>
 </body>
 </html>
